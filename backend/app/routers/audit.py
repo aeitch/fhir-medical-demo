@@ -1,6 +1,6 @@
 from typing import Any
 
-from backend.app.audit.logger import audit_logger
+from app.audit.logger import audit_logger
 from fastapi import APIRouter, Query
 
 router = APIRouter(prefix="/audit", tags=["Audit & Governance"])

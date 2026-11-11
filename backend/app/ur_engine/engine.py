@@ -1,5 +1,5 @@
-from backend.app.fhir.models import PatientSummary
-from backend.app.ur_engine.models import UREvaluationResponse
+from app.fhir.models import PatientSummary
+from app.ur_engine.models import UREvaluationResponse
 
 
 class UREngine:
@@ -142,7 +142,7 @@ class UREngine:
                 criteria_met.append("Level of care benchmarked against CMS 2-Midnight Rule (42 CFR § 412.3)")
             summary = f"Comprehensive clinical evaluation for {patient.full_name} based on active FHIR condition profile and observed vital signs."
 
-        from backend.app.gap_detect.detector import DocumentationGapDetector
+        from app.gap_detect.detector import DocumentationGapDetector
 
         gaps = DocumentationGapDetector.detect_gaps(patient, status)
 

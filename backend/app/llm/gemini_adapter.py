@@ -4,9 +4,9 @@ import os
 import time
 from typing import Any
 
-from backend.app.llm.adapter import BaseLLMAdapter
-from backend.app.llm.models import CostCalculator, NarrativeResponse
-from backend.app.prompts.prompt_manager import PromptManager
+from app.llm.adapter import BaseLLMAdapter
+from app.llm.models import CostCalculator, NarrativeResponse
+from app.prompts.prompt_manager import PromptManager
 
 logger = logging.getLogger("ur_console.llm")
 
@@ -69,7 +69,7 @@ class VertexAIGeminiAdapter(BaseLLMAdapter):
             logger.warning(
                 "Vertex AI Gemini call failed or client not initialized: %s. Using high-fidelity synthetic fallback.", e
             )
-            from backend.app.llm.mock_adapter import MockLLMAdapter
+            from app.llm.mock_adapter import MockLLMAdapter
 
             fallback_res = await MockLLMAdapter().generate_narrative(
                 patient_summary, ur_decision, target_payer, correlation_id

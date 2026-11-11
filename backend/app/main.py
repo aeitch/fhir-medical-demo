@@ -1,24 +1,9 @@
 import logging
 import os
 import sys
-import types
 
-# Ensure 'backend' namespace is mapped when Vercel deploys directly from backend/
-_base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if _base_dir not in sys.path:
-    sys.path.insert(0, _base_dir)
-
-if "backend" not in sys.modules:
-    _b = types.ModuleType("backend")
-    _b.__path__ = [_base_dir]
-    sys.modules["backend"] = _b
-else:
-    _b = sys.modules["backend"]
-    if not hasattr(_b, "__path__"):
-        _b.__path__ = [_base_dir]
-
-from backend.app.audit.middleware import CorrelationIdMiddleware
-from backend.app.routers import audit, fhir_metadata, health, narrative, patients, smart, ur
+from app.audit.middleware import CorrelationIdMiddleware
+from app.routers import audit, fhir_metadata, health, narrative, patients, smart, ur
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

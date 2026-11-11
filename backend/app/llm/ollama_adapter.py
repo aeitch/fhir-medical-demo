@@ -4,9 +4,9 @@ import time
 from typing import Any
 
 import httpx
-from backend.app.llm.adapter import BaseLLMAdapter
-from backend.app.llm.models import CostCalculator, NarrativeResponse
-from backend.app.prompts.prompt_manager import PromptManager
+from app.llm.adapter import BaseLLMAdapter
+from app.llm.models import CostCalculator, NarrativeResponse
+from app.prompts.prompt_manager import PromptManager
 
 logger = logging.getLogger("ur_console.llm")
 
@@ -53,7 +53,7 @@ class OllamaGemmaAdapter(BaseLLMAdapter):
                     raise RuntimeError(f"Ollama returned HTTP {resp.status_code}")
         except Exception as e:
             logger.warning("Ollama offline call failed: %s. Falling back to deterministic mock generator.", e)
-            from backend.app.llm.mock_adapter import MockLLMAdapter
+            from app.llm.mock_adapter import MockLLMAdapter
 
             return await MockLLMAdapter().generate_narrative(patient_summary, ur_decision, target_payer, correlation_id)
 

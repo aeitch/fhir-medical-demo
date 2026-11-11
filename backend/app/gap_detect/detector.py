@@ -1,4 +1,4 @@
-from backend.app.fhir.models import PatientSummary
+from app.fhir.models import PatientSummary
 
 
 class DocumentationGapDetector:

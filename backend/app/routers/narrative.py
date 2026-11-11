@@ -1,11 +1,11 @@
-from backend.app.audit.logger import audit_logger
-from backend.app.fhir.registry import get_fhir_adapter
-from backend.app.llm.gemini_adapter import VertexAIGeminiAdapter
-from backend.app.llm.guardrails import PHIGuardrail
-from backend.app.llm.mock_adapter import MockLLMAdapter
-from backend.app.llm.models import NarrativeResponse
-from backend.app.llm.ollama_adapter import OllamaGemmaAdapter
-from backend.app.ur_engine.engine import UREngine
+from app.audit.logger import audit_logger
+from app.fhir.registry import get_fhir_adapter
+from app.llm.gemini_adapter import VertexAIGeminiAdapter
+from app.llm.guardrails import PHIGuardrail
+from app.llm.mock_adapter import MockLLMAdapter
+from app.llm.models import NarrativeResponse
+from app.llm.ollama_adapter import OllamaGemmaAdapter
+from app.ur_engine.engine import UREngine
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
 

@@ -1,7 +1,7 @@
-from backend.app.audit.logger import audit_logger
-from backend.app.fhir.registry import get_fhir_adapter
-from backend.app.ur_engine.engine import UREngine
-from backend.app.ur_engine.models import UREvaluationRequest, UREvaluationResponse
+from app.audit.logger import audit_logger
+from app.fhir.registry import get_fhir_adapter
+from app.ur_engine.engine import UREngine
+from app.ur_engine.models import UREvaluationRequest, UREvaluationResponse
 from fastapi import APIRouter, HTTPException, Request
 
 router = APIRouter(prefix="/ur", tags=["Utilization Review"])

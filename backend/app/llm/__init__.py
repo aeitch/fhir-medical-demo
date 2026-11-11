@@ -1,9 +1,9 @@
-from backend.app.llm.adapter import BaseLLMAdapter
-from backend.app.llm.gemini_adapter import VertexAIGeminiAdapter
-from backend.app.llm.guardrails import PHIGuardrail
-from backend.app.llm.mock_adapter import MockLLMAdapter
-from backend.app.llm.models import CostCalculator, NarrativeRequest, NarrativeResponse
-from backend.app.llm.ollama_adapter import OllamaGemmaAdapter
+from app.llm.adapter import BaseLLMAdapter
+from app.llm.gemini_adapter import VertexAIGeminiAdapter
+from app.llm.guardrails import PHIGuardrail
+from app.llm.mock_adapter import MockLLMAdapter
+from app.llm.models import CostCalculator, NarrativeRequest, NarrativeResponse
+from app.llm.ollama_adapter import OllamaGemmaAdapter
 
 __all__ = [
     "BaseLLMAdapter",

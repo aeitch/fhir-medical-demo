@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any
 
-from backend.app.llm.models import NarrativeResponse
+from app.llm.models import NarrativeResponse
 
 
 class BaseLLMAdapter(ABC):

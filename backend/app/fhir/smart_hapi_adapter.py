@@ -3,8 +3,8 @@ from datetime import UTC, datetime
 from typing import Any
 
 import httpx
-from backend.app.fhir.adapter import BaseFHIRAdapter
-from backend.app.fhir.models import PatientSummary
+from app.fhir.adapter import BaseFHIRAdapter
+from app.fhir.models import PatientSummary
 
 logger = logging.getLogger("ur_console.fhir.smart_hapi")
 

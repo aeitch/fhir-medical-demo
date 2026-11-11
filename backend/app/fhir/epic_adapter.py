@@ -4,8 +4,8 @@ import os
 from typing import Any, ClassVar
 
 import httpx
-from backend.app.fhir.adapter import BaseFHIRAdapter
-from backend.app.fhir.models import PatientSummary
+from app.fhir.adapter import BaseFHIRAdapter
+from app.fhir.models import PatientSummary
 
 logger = logging.getLogger("ur_console.fhir.epic")
 
@@ -90,7 +90,7 @@ class EpicFHIRAdapter(BaseFHIRAdapter):
 
         # If live Epic sandbox network call is unreachable, slow, or auth-gated, return configured sandbox profiles
         if not patients:
-            from backend.app.fhir.local_adapter import LocalFixtureFHIRAdapter
+            from app.fhir.local_adapter import LocalFixtureFHIRAdapter
 
             adapter = LocalFixtureFHIRAdapter()
             epic_seeds = [
@@ -162,7 +162,7 @@ class EpicFHIRAdapter(BaseFHIRAdapter):
                 logger.warning("Live Epic fetch for %s failed (%s). Using fallback fixture.", patient_id, e)
 
         # Fallback to rich synthetic bundle mapped to known test scenarios
-        from backend.app.fhir.local_adapter import LocalFixtureFHIRAdapter
+        from app.fhir.local_adapter import LocalFixtureFHIRAdapter
 
         fallback_map = {
             "erXuFYUfucBZaryVpgxafgw3": "synthetic-pt-001",
@@ -215,6 +215,6 @@ class EpicFHIRAdapter(BaseFHIRAdapter):
         if not target_seed:
             return None
 
-        from backend.app.fhir.local_adapter import LocalFixtureFHIRAdapter
+        from app.fhir.local_adapter import LocalFixtureFHIRAdapter
 
         return await LocalFixtureFHIRAdapter().get_raw_bundle(target_seed)

@@ -3,11 +3,11 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from backend.app.fhir.adapter import BaseFHIRAdapter
-from backend.app.fhir.models import PatientSummary
+from app.fhir.adapter import BaseFHIRAdapter
+from app.fhir.models import PatientSummary
 
 try:
-    from backend.app.fhir.seed_bundles import SEED_BUNDLES
+    from app.fhir.seed_bundles import SEED_BUNDLES
 except ImportError:
     try:
         from app.fhir.seed_bundles import SEED_BUNDLES

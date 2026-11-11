@@ -1,7 +1,7 @@
 import logging
 import os
 
-from backend.app.audit.logger import audit_logger
+from app.audit.logger import audit_logger
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 

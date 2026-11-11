@@ -2,8 +2,8 @@ import os
 from typing import Any
 
 import httpx
-from backend.app.fhir.adapter import BaseFHIRAdapter
-from backend.app.fhir.models import PatientSummary
+from app.fhir.adapter import BaseFHIRAdapter
+from app.fhir.models import PatientSummary
 
 
 class GCPHealthcareFHIRAdapter(BaseFHIRAdapter):
@@ -64,7 +64,7 @@ class GCPHealthcareFHIRAdapter(BaseFHIRAdapter):
                 )
                 if resp.status_code == 200:
                     bundle = resp.json()
-                    from backend.app.fhir.local_adapter import LocalFixtureFHIRAdapter
+                    from app.fhir.local_adapter import LocalFixtureFHIRAdapter
 
                     return LocalFixtureFHIRAdapter()._extract_summary(bundle)
             except Exception:

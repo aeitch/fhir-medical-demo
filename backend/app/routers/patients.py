@@ -1,8 +1,8 @@
 import math
 from typing import Any
 
-from backend.app.audit.logger import audit_logger
-from backend.app.fhir.registry import FHIR_SERVER_REGISTRY, get_fhir_adapter
+from app.audit.logger import audit_logger
+from app.fhir.registry import FHIR_SERVER_REGISTRY, get_fhir_adapter
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel
 

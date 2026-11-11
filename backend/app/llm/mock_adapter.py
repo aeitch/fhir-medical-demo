@@ -1,8 +1,8 @@
 import time
 from typing import Any
 
-from backend.app.llm.adapter import BaseLLMAdapter
-from backend.app.llm.models import CostCalculator, NarrativeResponse
+from app.llm.adapter import BaseLLMAdapter
+from app.llm.models import CostCalculator, NarrativeResponse
 
 
 class MockLLMAdapter(BaseLLMAdapter):

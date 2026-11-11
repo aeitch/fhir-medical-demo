@@ -19,23 +19,11 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# CORS Configuration
-ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:5173",
-    "https://app.aeitch.com",
-    "https://backend.aeitch.com",
-    "https://aeitch.com",
-    "https://clinefficiency-frontend-256461781819.us-central1.run.app",
-    "https://clinefficiency-frontend-ryrty7jjta-uc.a.run.app",
-    "*",
-]
-
+# CORS Configuration - permissive for demo deployment
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

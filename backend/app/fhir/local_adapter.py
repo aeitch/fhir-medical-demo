@@ -6,6 +6,15 @@ from typing import Any
 from backend.app.fhir.adapter import BaseFHIRAdapter
 from backend.app.fhir.models import PatientSummary
 
+try:
+    from backend.app.fhir.seed_bundles import SEED_BUNDLES
+except ImportError:
+    try:
+        from app.fhir.seed_bundles import SEED_BUNDLES
+    except ImportError:
+        SEED_BUNDLES = {}
+
+
 
 class LocalFixtureFHIRAdapter(BaseFHIRAdapter):
     """Zero-dependency local adapter reading Synthea R4 bundles from disk."""
@@ -92,30 +101,36 @@ class LocalFixtureFHIRAdapter(BaseFHIRAdapter):
             scenario_description=scenario,
         )
 
+    def _get_bundles(self) -> list[dict[str, Any]]:
+        bundles = []
+        if self.seed_dir.exists():
+            for file_path in sorted(self.seed_dir.glob("*.json")):
+                b = self._load_bundle(file_path)
+                if b:
+                    bundles.append(b)
+        if not bundles and SEED_BUNDLES:
+            bundles = list(SEED_BUNDLES.values())
+        return bundles
+
     async def list_patients(self) -> list[dict[str, Any]]:
         patients = []
-        if not self.seed_dir.exists():
-            return patients
-
-        for file_path in sorted(self.seed_dir.glob("*.json")):
-            bundle = self._load_bundle(file_path)
-            if bundle:
-                summary = self._extract_summary(bundle)
-                patients.append(
-                    {
-                        "id": summary.id,
-                        "mrn": summary.mrn,
-                        "name": summary.full_name,
-                        "gender": summary.gender,
-                        "birthDate": summary.birth_date,
-                        "age": summary.age,
-                        "scenario": summary.scenario_description,
-                        "encounter_class": summary.active_encounter.get("class", {}).get("display", "Inpatient")
-                        if summary.active_encounter
-                        else "Inpatient",
-                        "provenance": "Offline Synthea Seed Store",
-                    }
-                )
+        for bundle in self._get_bundles():
+            summary = self._extract_summary(bundle)
+            patients.append(
+                {
+                    "id": summary.id,
+                    "mrn": summary.mrn,
+                    "name": summary.full_name,
+                    "gender": summary.gender,
+                    "birthDate": summary.birth_date,
+                    "age": summary.age,
+                    "scenario": summary.scenario_description,
+                    "encounter_class": summary.active_encounter.get("class", {}).get("display", "Inpatient")
+                    if summary.active_encounter
+                    else "Inpatient",
+                    "provenance": "Offline Synthea Seed Store",
+                }
+            )
         return patients
 
     async def list_patients_paginated(self, page: int = 1, page_size: int = 10) -> tuple[list[dict[str, Any]], int]:
@@ -126,24 +141,22 @@ class LocalFixtureFHIRAdapter(BaseFHIRAdapter):
         return all_patients[start:end], total
 
     async def get_patient_summary(self, patient_id: str) -> PatientSummary | None:
-        if not self.seed_dir.exists():
-            return None
-
-        for file_path in self.seed_dir.glob("*.json"):
-            bundle = self._load_bundle(file_path)
-            if bundle:
-                summary = self._extract_summary(bundle)
-                if summary.id == patient_id:
-                    return summary
+        for bundle in self._get_bundles():
+            summary = self._extract_summary(bundle)
+            if summary.id == patient_id:
+                return summary
         return None
 
     async def get_raw_bundle(self, patient_id: str) -> dict[str, Any] | None:
-        if not self.seed_dir.exists():
-            return None
-
-        for file_path in self.seed_dir.glob("*.json"):
-            bundle = self._load_bundle(file_path)
-            if bundle:
+        for bundle in self._get_bundles():
+            patient_res = None
+            for entry in bundle.get("entry", []):
+                if entry.get("resource", {}).get("resourceType") == "Patient":
+                    patient_res = entry.get("resource")
+                    break
+            if patient_res and patient_res.get("id") == patient_id:
+                return bundle
+        return None
                 summary = self._extract_summary(bundle)
                 if summary.id == patient_id:
                     return bundle

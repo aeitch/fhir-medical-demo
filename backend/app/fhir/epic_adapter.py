@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from typing import Any, ClassVar
@@ -46,42 +47,48 @@ class EpicFHIRAdapter(BaseFHIRAdapter):
         return headers
 
     async def list_patients(self) -> list[dict[str, Any]]:
-        """Dynamically queries Epic sandbox for available test patients."""
+        """Dynamically queries Epic sandbox for available test patients with concurrent fast fallback."""
         patients = []
         headers = self._get_headers()
 
-        async with httpx.AsyncClient() as client:
-            # Query each known Epic sandbox test patient directly
-            for item in self.KNOWN_EPIC_TEST_PATIENTS:
-                pid = item["id"]
-                try:
-                    resp = await client.get(f"{self.base_url}/Patient/{pid}", headers=headers, timeout=5.0)
-                    if resp.status_code == 200:
-                        p_data = resp.json()
-                        names = p_data.get("name", [{}])
-                        given = " ".join(names[0].get("given", []))
-                        family = names[0].get("family", "")
-                        full_name = f"{given} {family}".strip() or "Epic Test Patient"
-                        gender = p_data.get("gender", "unknown")
-                        birth_date = p_data.get("birthDate", "1960-01-01")
+        async def _fetch_patient(client: httpx.AsyncClient, item: dict[str, str]):
+            pid = item["id"]
+            try:
+                resp = await client.get(f"{self.base_url}/Patient/{pid}", headers=headers, timeout=1.5)
+                if resp.status_code == 200:
+                    p_data = resp.json()
+                    names = p_data.get("name", [{}])
+                    given = " ".join(names[0].get("given", []))
+                    family = names[0].get("family", "")
+                    full_name = f"{given} {family}".strip() or "Epic Test Patient"
+                    gender = p_data.get("gender", "unknown")
+                    birth_date = p_data.get("birthDate", "1960-01-01")
+                    return {
+                        "id": pid,
+                        "mrn": f"EPIC-{pid[:8].upper()}",
+                        "name": full_name,
+                        "gender": gender,
+                        "birthDate": birth_date,
+                        "age": 65,
+                        "scenario": item["label"],
+                        "encounter_class": "inpatient encounter",
+                        "provenance": "Epic on FHIR Open Sandbox (Live)",
+                    }
+            except Exception as e:
+                logger.debug("Epic sandbox query for %s returned %s", pid, e)
+            return None
 
-                        patients.append(
-                            {
-                                "id": pid,
-                                "mrn": f"EPIC-{pid[:8].upper()}",
-                                "name": full_name,
-                                "gender": gender,
-                                "birthDate": birth_date,
-                                "age": 65,
-                                "scenario": item["label"],
-                                "encounter_class": "inpatient encounter",
-                                "provenance": "Epic on FHIR Open Sandbox (Live)",
-                            }
-                        )
-                except Exception as e:
-                    logger.debug("Epic sandbox query for %s returned %s", pid, e)
+        try:
+            async with httpx.AsyncClient() as client:
+                tasks = [_fetch_patient(client, item) for item in self.KNOWN_EPIC_TEST_PATIENTS]
+                results = await asyncio.gather(*tasks, return_exceptions=True)
+                for r in results:
+                    if isinstance(r, dict):
+                        patients.append(r)
+        except Exception as e:
+            logger.debug("Failed concurrent Epic sandbox query: %s", e)
 
-        # If live Epic sandbox network call is unreachable or auth-gated, return configured sandbox profiles
+        # If live Epic sandbox network call is unreachable, slow, or auth-gated, return configured sandbox profiles
         if not patients:
             from backend.app.fhir.local_adapter import LocalFixtureFHIRAdapter
 
@@ -122,30 +129,22 @@ class EpicFHIRAdapter(BaseFHIRAdapter):
 
         async with httpx.AsyncClient() as client:
             try:
-                # 1. Fetch Patient
-                p_resp = await client.get(f"{self.base_url}/Patient/{patient_id}", headers=headers, timeout=6.0)
-                if p_resp.status_code == 200:
+                # Concurrent fetch of patient details with 2.0s timeout
+                p_task = client.get(f"{self.base_url}/Patient/{patient_id}", headers=headers, timeout=2.0)
+                c_task = client.get(f"{self.base_url}/Condition?patient={patient_id}", headers=headers, timeout=2.0)
+                o_task = client.get(f"{self.base_url}/Observation?patient={patient_id}", headers=headers, timeout=2.0)
+                d_task = client.get(f"{self.base_url}/DocumentReference?patient={patient_id}", headers=headers, timeout=2.0)
+
+                p_resp, c_resp, o_resp, d_resp = await asyncio.gather(p_task, c_task, o_task, d_task, return_exceptions=True)
+
+                if not isinstance(p_resp, Exception) and p_resp.status_code == 200:
                     p_data = p_resp.json()
                     names = p_data.get("name", [{}])
                     full_name = f"{' '.join(names[0].get('given', []))} {names[0].get('family', '')}".strip()
 
-                    # 2. Fetch Conditions
-                    c_resp = await client.get(
-                        f"{self.base_url}/Condition?patient={patient_id}", headers=headers, timeout=6.0
-                    )
-                    conditions = c_resp.json().get("entry", []) if c_resp.status_code == 200 else []
-
-                    # 3. Fetch Observations
-                    o_resp = await client.get(
-                        f"{self.base_url}/Observation?patient={patient_id}", headers=headers, timeout=6.0
-                    )
-                    observations = o_resp.json().get("entry", []) if o_resp.status_code == 200 else []
-
-                    # 4. Fetch Documents
-                    d_resp = await client.get(
-                        f"{self.base_url}/DocumentReference?patient={patient_id}", headers=headers, timeout=6.0
-                    )
-                    documents = d_resp.json().get("entry", []) if d_resp.status_code == 200 else []
+                    conditions = c_resp.json().get("entry", []) if not isinstance(c_resp, Exception) and c_resp.status_code == 200 else []
+                    observations = o_resp.json().get("entry", []) if not isinstance(o_resp, Exception) and o_resp.status_code == 200 else []
+                    documents = d_resp.json().get("entry", []) if not isinstance(d_resp, Exception) and d_resp.status_code == 200 else []
 
                     return PatientSummary(
                         id=patient_id,
@@ -162,7 +161,7 @@ class EpicFHIRAdapter(BaseFHIRAdapter):
             except Exception as e:
                 logger.warning("Live Epic fetch for %s failed (%s). Using fallback fixture.", patient_id, e)
 
-        # Fallback to rich synthetic bundle mapped to known test scenarios ONLY
+        # Fallback to rich synthetic bundle mapped to known test scenarios
         from backend.app.fhir.local_adapter import LocalFixtureFHIRAdapter
 
         fallback_map = {

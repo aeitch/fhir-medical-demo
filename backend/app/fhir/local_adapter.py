@@ -17,6 +17,10 @@ class LocalFixtureFHIRAdapter(BaseFHIRAdapter):
             # Look relative to project root or package root
             base_path = Path(__file__).resolve().parent.parent.parent.parent
             self.seed_dir = base_path / "seed"
+            if not self.seed_dir.exists():
+                alt_dir = Path(__file__).resolve().parent.parent.parent / "seed"
+                if alt_dir.exists():
+                    self.seed_dir = alt_dir
 
     def _load_bundle(self, file_path: Path) -> dict[str, Any] | None:
         if not file_path.exists():

@@ -2,24 +2,31 @@ import os
 import sys
 import types
 
-# Ensure current directory is on sys.path
-backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if backend_dir not in sys.path:
-    sys.path.insert(0, backend_dir)
+# 1. Determine paths
+api_dir = os.path.dirname(os.path.abspath(__file__))
+base_dir = os.path.dirname(api_dir)
 
-# Ensure parent directory is also on sys.path if available
-parent_dir = os.path.dirname(backend_dir)
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
+# Add search paths
+for p in [base_dir, os.path.dirname(base_dir)]:
+    if p and p not in sys.path:
+        sys.path.insert(0, p)
 
-# Ensure 'backend' module is recognized when running standalone in backend/
-try:
-    import backend.app.main
-except (ModuleNotFoundError, ImportError):
-    import app
+# 2. Locate where 'app' lives
+if os.path.isdir(os.path.join(base_dir, "app")):
+    backend_root = base_dir
+elif os.path.isdir(os.path.join(base_dir, "backend", "app")):
+    backend_root = os.path.join(base_dir, "backend")
+else:
+    backend_root = base_dir
+
+# 3. Create 'backend' namespace module so 'from backend.app...' resolves cleanly
+if "backend" not in sys.modules:
     b = types.ModuleType("backend")
-    b.app = app
+    b.__path__ = [backend_root]
     sys.modules["backend"] = b
-    sys.modules["backend.app"] = app
+else:
+    b = sys.modules["backend"]
+    if not hasattr(b, "__path__"):
+        b.__path__ = [backend_root]
 
 from backend.app.main import app
